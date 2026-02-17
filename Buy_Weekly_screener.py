@@ -8,34 +8,33 @@ st.title("📈 Weekly Candlestick Pattern Screener")
 st.write("Scanning for **Doji** and **Railroad Tracks** on a Weekly Timeframe.")
 
 # 1. Input: List of Tickers
-ticker_input = st.text_input("Enter Tickers (separated by commas)", "RELIANCE.NS, TCS.NS, INFEY.NS, AAPL, TSLA, MSFT")
+ticker_input = st.text_input("Enter Tickers (separated by commas)", "RELIANCE.NS, PGHH.NS, MAZDOCK.NS, NATIONALUM.NS, TRENT.NS, DIXON.NS, KPITTECH.NS")
 tickers = [t.strip() for t in ticker_input.split(",")]
 
-def identify_patterns(df):
+def identify_patterns(df,symbol):
     if len(df) < 2:
         return None
     
     # Get last two weekly candles
     current_w = df.iloc[-1]
     prev_w = df.iloc[-2]
-    
-    results = [9]
+    results = [ ]
     
     # Doji Logic (Body < 10% of total range)
     body = abs(current_w['Open'] - current_w['Close'])
     total_range = current_w['High'] - current_w['Low']
-    if total_range > 0 and body <= (total_range * 0.1):
+    if total_range[symbol] > 0 and body[symbol] <= (total_range[symbol] * 0.1):
         results.append("Doji ⚖️")
-
+    
     # Railroad Tracks Logic
-    # 1. Opposite colors 2. Similar body sizes 3. Significant size
+    # 1. Opposite colors 2. Similar body sizes 3. Significxant size
     prev_body = abs(prev_w['Open'] - prev_w['Close'])
     curr_body = abs(current_w['Open'] - current_w['Close'])
     
     # Tolerance for "similar size" (within 10%)
-    size_similarity = abs(curr_body - prev_body) < (prev_body * 0.1)
+    size_similarity = abs(curr_body[symbol] - prev_body[symbol]) < (prev_body[symbol] * 0.1)
     
-    if size_similarity and prev_body > 0:
+    if size_similarity and prev_body[symbol] > 0:
         if prev_w['Close'] < prev_w['Open'] and current_w['Close'] > current_w['Open']:
             results.append("Bullish Railtrack 🚆⬆️")
         elif prev_w['Close'] > prev_w['Open'] and current_w['Close'] < current_w['Open']:
@@ -45,7 +44,7 @@ def identify_patterns(df):
 
 # 2. Execution Button
 if st.button("Run Screener"):
-    data_list = []
+    data_list = [ ]
     
     with st.spinner('Fetching weekly data...'):
         for symbol in tickers:
@@ -54,9 +53,10 @@ if st.button("Run Screener"):
                 ticker_data = yf.download(symbol, period="6mo", interval="1wk", progress=False)
                 
                 if not ticker_data.empty:
-                    pattern = identify_patterns(ticker_data)
+                    pattern = identify_patterns(ticker_data,symbol)
                     last_price = round(ticker_data['Close'].iloc[-1], 2)
-                    data_list.append({"Ticker": symbol, "Price": last_price, "Weekly Pattern": pattern})
+                    data_list.append({"Ticker": symbol, "Price": last_price[symbol], "Weekly Pattern": pattern})
+                   
             except Exception as e:
                 st.error(f"Error loading {symbol}: {e}")
 
